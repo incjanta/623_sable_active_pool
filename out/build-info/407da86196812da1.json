@@ -1,1 +1,0 @@
-{"id":"407da86196812da1","source_id_to_path":{"0":"src/Dependencies/CheckContract.sol","1":"src/Dependencies/IERC20.sol","2":"src/Dependencies/IERC2612.sol","3":"src/Dependencies/SafeMath.sol","4":"src/Dependencies/console.sol","5":"src/Interfaces/IUSDSToken.sol","6":"src/USDSToken.sol","7":"test/USDSTokenApproveRaceAudit.t.sol"},"language":"Solidity"}

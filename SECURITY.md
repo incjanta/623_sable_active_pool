@@ -1,8 +1,28 @@
-# Common Vulnerability Exclusion List
+# Sable Fund-Extraction Security Scope
+
+## Paid Impact Focus
+
+This program should only generate, validate, and report findings that match one
+of these two impact families:
+
+- Critical fund extraction or protocol value drain: an unprivileged user can
+  gain, mint, borrow, redeem, withdraw, claim, or extract more BNB, USDS, SABLE,
+  SABLE_LP, collateral, debt value, liquidation value, redemption value, or fee
+  value than intended from the protocol.
+- Critical reward extraction or unfair reward access: an unprivileged user can
+  access rewards they should not receive, bypass reward eligibility or timing,
+  claim more rewards than their entitlement, repeat/replay reward claims, or
+  otherwise extract excess reward value from StabilityPool, CommunityIssuance,
+  SableStakingV2, front-end, BNB, USDS, SABLE, or LP reward paths.
+
+Everything else is out of scope unless the same reachable path directly creates
+attacker-controlled fund or reward extraction.
 
 ## Out of Scope & Rules
 
-These are the default impacts recommended to projects to mark as out of scope for their bug bounty program. The actual list of out-of-scope impacts differs from program to program.
+These exclusions are interpreted under the paid impact focus above. A report is
+valid only if it proves concrete fund extraction, protocol value drain, reward
+extraction, or unfair reward access.
 
 ### General
 
@@ -14,6 +34,13 @@ These are the default impacts recommended to projects to mark as out of scope fo
 - Best practice recommendations.
 - Feature requests.
 - Impacts on test files and configuration files, unless stated otherwise in the bug bounty program.
+- Denial of service, liveness failures, liquidation blockage, temporary or
+  permanent freezes, griefing, gas griefing, or unavailable functions without
+  attacker value extraction.
+- Generic high, medium, critical, accounting-desync, invariant, or best-practice
+  claims without a concrete path to attacker-controlled funds or rewards.
+- Pure insolvency, bad debt, or accounting mismatch unless the attacker can
+  withdraw, borrow, redeem, liquidate, claim, or otherwise retain excess value.
 
 ### Smart Contracts / Blockchain DLT
 
@@ -22,8 +49,18 @@ These are the default impacts recommended to projects to mark as out of scope fo
 - Lack of liquidity impacts.
 - Impacts from Sybil attacks.
 - Impacts involving centralization risks.
+- Oracle, price, rounding, fee, or decimal issues unless they let an
+  unprivileged attacker extract funds/rewards or increase attacker-controlled
+  value.
+- Liquidation or redemption correctness issues unless they let an attacker seize
+  too much collateral, redeem too much value, avoid required repayment while
+  keeping value, or overclaim liquidation/redemption/gas-compensation gains.
+- Reward accounting issues unless they let an attacker claim more BNB, USDS,
+  SABLE, LP-derived value, front-end rewards, staking rewards, or
+  StabilityPool rewards than their entitlement.
 
-Note: This does not exclude oracle manipulation/flash-loan attacks.
+Note: This does not exclude oracle manipulation/flash-loan attacks when they
+directly create fund extraction or reward extraction.
 
 ### Websites and Apps
 
@@ -51,6 +88,20 @@ Note: This does not exclude oracle manipulation/flash-loan attacks.
 - Automated scanner reports without demonstrated impact.
 - UI/UX best practice recommendations.
 - Non-future-proof NFT rendering.
+
+### Explicitly Out of Scope For This Run
+
+- Any denial-of-service finding, even severe, unless the exploit also transfers
+  or unlocks excess value for the attacker.
+- Any freeze/liveness/blocked-withdrawal issue unless it is part of a direct
+  attacker profit path.
+- Any liquidation blockage issue unless the attacker extracts collateral,
+  repayment value, gas compensation, or rewards beyond entitlement.
+- Any admin-only, timelock-only, governance-only, or owner-only action unless an
+  unprivileged user can trigger a later extraction path from it.
+- Any report whose impact is only "the protocol is unhealthy", "accounting is
+  wrong", or "state is inconsistent" without proving excess attacker-controlled
+  value.
 
 ## Prohibited Activities
 

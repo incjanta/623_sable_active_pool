@@ -1,415 +1,689 @@
 {
-  "protocol": {
-    "name": "Morpho Midnight",
-    "type": "EVM non-custodial fixed-rate fixed-maturity lending protocol",
-    "repo_focus": "Solidity protocol with core contract, interfaces, libraries, periphery, and ratifiers",
-    "core_contracts_or_dirs": [
-      "src/Midnight.sol",
-      "src/interfaces",
-      "src/libraries",
-      "src/periphery",
-      "src/ratifiers"
-    ],
-    "main_design": [
-      "isolated immutable markets",
-      "permissionless market creation",
-      "fixed maturity per market",
-      "arbitrary loan token",
-      "single or multi-collateral markets",
-      "credit units for lenders",
-      "debt units for borrowers",
-      "offer-based trading instead of pooled liquidity",
-      "makers do not lock capital when publishing offers",
-      "takers execute offers onchain",
-      "ratifier validates offer authority",
-      "optional maker callback can source funds during take",
-      "optional market gates restrict entry or liquidation"
-    ]
+  "schema": {
+    "name": "protocol_live_context",
+    "version": "1.0.0",
+    "canonical": true,
+    "description": "Canonical machine-readable live recon context. Markdown files under aarc-audit/live-context are human-readable mirrors and supporting notes."
   },
-  "audit_mode": {
-    "attacker_model": [
-      "unprivileged borrower",
-      "unprivileged lender",
-      "maker",
-      "taker",
-      "liquidator",
-      "market creator",
-      "callback receiver",
-      "authorized operator",
-      "signature user",
-      "router/composer using multicall"
-    ],
-    "do_not_rely_on": [
-      "admin key compromise",
-      "governance capture",
-      "leaked private keys",
-      "malicious maintainer",
-      "pure external oracle failure",
-      "impossible oracle values",
-      "user mistake only",
-      "gas-only optimizations",
-      "style or docs-only issues"
-    ],
-    "best_bug_classes": [
-      "direct loss of user funds",
-      "protocol insolvency",
-      "bad debt creation",
-      "unauthorized collateral withdrawal",
-      "unauthorized collateral seizure",
-      "permanent or long-term fund freeze",
-      "liquidation bypass",
-      "healthy-account liquidation",
-      "offer replay or overfill",
-      "gate or ratifier bypass",
-      "credit/debt accounting corruption",
-      "callback or multicall state corruption"
-    ]
-  },
-  "whitepaper_constants_and_rules": {
-    "markets": {
-      "market_config_is_immutable_after_creation": true,
-      "market_has_loan_token": true,
-      "market_has_maturity": true,
-      "market_has_accepted_collateral_set": true,
-      "market_can_have_multiple_collateral_assets": true
+  "project": {
+    "id": "623_sable_active_pool",
+    "name": "Sable Finance ActivePool",
+    "protocol_family": "Liquity-style BNB-collateralized debt system",
+    "chain": "BNB Smart Chain mainnet",
+    "chain_id": 56,
+    "refresh_date": "2026-06-07",
+    "refresh_block": 102807300,
+    "rpc_endpoint_used": "https://bsc-dataseed.binance.org/",
+    "primary_target": {
+      "name": "ActivePool",
+      "address": "0x0cCb12C9fB1e1252E60d29aC5c4fDc0640edD72C",
+      "source": "src/ActivePool.sol",
+      "is_proxy": false,
+      "verification_status": "BscScan verified source",
+      "compiler_version": "v0.6.11+commit.5ef660b1",
+      "optimizer": {
+        "enabled": true,
+        "runs": 1
+      }
     },
-    "units": {
-      "one_debt_unit": "obligation to repay one loan token before maturity",
-      "one_credit_unit": "claim on repaid loan tokens",
-      "buying_units": "increases credit or reduces existing debt first",
-      "selling_units": "increases debt or reduces existing credit first",
-      "positions_are_market_level_fungible": true,
-      "positions_are_not_bilateral": true
-    },
-    "maturity": {
-      "trading_after_maturity_allowed": true,
-      "debt_increase_after_maturity_forbidden": true,
-      "post_maturity_trading_purpose": "facilitate unwinding when liquidations are unprofitable",
-      "overdue_debt_after_maturity_is_liquidatable_even_if_healthy": true
-    },
-    "offers": {
-      "offers_are_not_protocol_broadcasted": true,
-      "offers_can_be_distributed_offchain": true,
-      "partial_fills_allowed": true,
-      "offer_can_be_filled_multiple_times_until_exhausted": true,
-      "settlement_is_atomic": true,
-      "offer_ratifier_called_at_take_time": true,
-      "ratifier_may_validate_signature_or_custom_logic": true,
-      "ratifier_may_support_merkle_root_offer_sets": true
-    },
-    "callbacks": {
-      "maker_callback_optional": true,
-      "callback_executes_at_take_time": true,
-      "callback_can_source_funds_or_collateral_at_execution": true,
-      "callback_can_roll_exposure_between_maturities": true
-    },
-    "multi_market_offers": {
-      "offers_can_share_consumption_group": true,
-      "executing_one_offer_decreases_group_remaining_budget": true,
-      "group_budget_prevents_total_exposure_exceeding_budget": true
-    },
-    "routing": {
-      "routing_is_off_protocol": true,
-      "no_protocol_orderbook_queue": true,
-      "no_protocol_price_time_priority": true,
-      "no_protocol_capital_reservation": true
-    },
-    "ticks": {
-      "discrete_price_tick_grid": true,
-      "initial_relative_tick_increment": "2%",
-      "possible_tick_increment_reductions": [
-        "1%",
-        "0.5%"
-      ],
-      "finer_ticks_keep_previous_ticks_valid": true,
-      "price_quantization_near_maturity": "1e-6",
-      "ties_round_down": true
-    },
-    "liquidation": {
-      "max_debt_formula": "sum(collateral_amount_i * oracle_price_i * LLTV_i)",
-      "healthy_if_max_debt_not_below_debt": true,
-      "unhealthy_positions_liquidatable_before_and_after_maturity": true,
-      "liquidator_repays_debt_and_seizes_collateral": true,
-      "repay_amount_capped_by_recovery_close_factor": true,
-      "full_liquidation_allowed_if_residual_collateral_below_dust": true,
-      "liquidation_cursor_gamma_values": [
-        "0.25",
-        "0.5"
-      ],
-      "lif_max_formula": "1 / (1 - gamma * (1 - LLTV))",
-      "post_maturity_liquidation_incentive_starts_at": "1",
-      "post_maturity_liquidation_incentive_ramps_to": "LIFmax",
-      "post_maturity_liquidation_ramp_window": "15 minutes"
-    },
-    "bad_debt": {
-      "bad_debt_reduces_lenders_credit_proportionally": true,
-      "bad_debt_realized_during_liquidation": true,
-      "excess_debt_realized_immediately_regardless_of_collateral_chosen_to_seize": true
-    },
-    "gates": {
-      "up_to_two_optional_gate_contracts_per_market": true,
-      "gates_fixed_at_market_creation": true,
-      "enter_gate_restricts_credit_or_debt_increase": true,
-      "enter_gate_must_not_block_exit": true,
-      "users_can_exit_even_if_enter_gate_reverts": true,
-      "liquidator_gate_restricts_who_may_liquidate": true
-    },
-    "authorization": {
-      "authorization_is_coarse_grained": true,
-      "authorization_not_scoped_by_action": true,
-      "authorization_not_scoped_by_market": true,
-      "authorized_address_has_full_control_over_authorizer_midnight_state": true,
-      "authorized_address_can_add_or_remove_authorizations": true
-    },
-    "fees": {
-      "settlement_fee_charged_at_take_time": true,
-      "settlement_fee_depends_on_time_to_maturity": true,
-      "settlement_fee_inserts_spread_between_buyer_and_seller_prices": true,
-      "settlement_fee_breakpoints_days": [
-        0,
-        1,
-        7,
-        30,
-        90,
-        180,
-        360
-      ],
-      "settlement_fee_constant_after_maturity_and_above_360_days": true,
-      "settlement_fee_annualized_cap": "50 bps",
-      "settlement_fee_ttm_zero_cap": "0.14 bps",
-      "continuous_fee_accrues_each_second_on_outstanding_credit": true,
-      "continuous_fee_borne_by_lenders": true,
-      "continuous_fee_crystallized_when_credit_increases": true,
-      "continuous_fee_cap": "1% annualized"
+    "markdown_artifacts": {
+      "folder": "aarc-audit/live-context/",
+      "readme": "aarc-audit/live-context/README.md",
+      "plan": "aarc-audit/live-context/plan.md",
+      "scope_md": "aarc-audit/live-context/scope.md",
+      "scope_json": "aarc-audit/live-context/scope.json",
+      "live_context_md": "aarc-audit/live-context/live-context.md",
+      "balances": "aarc-audit/live-context/balances.md",
+      "tokens": "aarc-audit/live-context/tokens.md",
+      "state_model": "aarc-audit/live-context/state-model.md",
+      "live_recon_prompt": "aarc-audit/live-context/live-recon-prompt.md",
+      "sources": "aarc-audit/live-context/sources.md"
     }
   },
-  "core_invariants": {
-    "solvency": [
-      "contract token balances must cover withdrawable assets, collateral claims, credit redemptions, and accrued fees",
-      "total claimable credit must not exceed repaid loan assets plus valid recoverable debt after loss accounting",
-      "bad debt must reduce lender credit exactly once and proportionally"
+  "scope": {
+    "include_rule": "Deployed contract or direct live dependency that can move/account funds, debt, collateral, rewards, oracle solvency, or authorization.",
+    "primary_scope": [
+      "src/ActivePool.sol",
+      "src/BorrowerOperations.sol",
+      "src/TroveManager.sol",
+      "src/StabilityPool.sol",
+      "src/DefaultPool.sol",
+      "src/CollSurplusPool.sol",
+      "src/USDSToken.sol",
+      "src/PriceFeed.sol",
+      "src/SystemState.sol",
+      "src/SortedTroves.sol",
+      "src/OracleRateCalculation.sol",
+      "src/TroveHelper.sol",
+      "src/GasPool.sol",
+      "src/TimeLock.sol",
+      "src/SABLE/SableStakingV2.sol",
+      "src/SABLE/CommunityIssuance.sol",
+      "src/SABLE/SABLEToken.sol"
     ],
-    "credit_debt": [
-      "every credit increase must correspond to valid debt creation, debt reduction, or settled repayment state",
-      "every debt increase must pass collateral and gate checks",
-      "buying units must reduce existing debt before increasing credit",
-      "selling units must reduce existing credit before increasing debt",
-      "debt must not increase after maturity"
+    "interface_scope": [
+      "src/Interfaces/IActivePool.sol",
+      "src/Interfaces/IBorrowerOperations.sol",
+      "src/Interfaces/ITroveManager.sol",
+      "src/Interfaces/IStabilityPool.sol",
+      "src/Interfaces/IDefaultPool.sol",
+      "src/Interfaces/ICollSurplusPool.sol",
+      "src/Interfaces/IUSDSToken.sol",
+      "src/Interfaces/IPriceFeed.sol",
+      "src/Interfaces/ISystemState.sol",
+      "src/Interfaces/ISortedTroves.sol",
+      "src/Interfaces/IOracleRateCalculation.sol",
+      "src/Interfaces/ITroveHelper.sol",
+      "src/Interfaces/ISableStakingV2.sol",
+      "src/Interfaces/ICommunityIssuance.sol",
+      "src/Interfaces/ISABLEToken.sol"
     ],
-    "offers": [
-      "offer fill amount cannot exceed remaining offer capacity",
-      "consumption group budget cannot be exceeded across offers",
-      "cancelled, expired, invalid, or already-consumed offers cannot be filled",
-      "ratifier approval must bind correct maker, market, offer, amount, price, deadline, nonce, salt, and consumption group",
-      "partial fills must update consumed state before any exploitable reentry point"
+    "conditional_scope": [
+      "verified-external:SableRewarder@0x23d253F1Ab38a1Ec8c05103232B4eFaFB6A1bdEb",
+      "src/BNBTransferScript.sol",
+      "src/Proxy/*.sol"
     ],
-    "collateral": [
-      "collateral cannot be withdrawn if it would make debt unhealthy",
-      "collateral cannot be seized unless liquidation rules allow it",
-      "collateral bitmap/list state must match actual deposited collateral",
-      "multi-collateral valuation must not skip or double count collateral"
+    "excluded_source": [
+      "src/TestContracts/**",
+      "test/**",
+      "lib/**",
+      "out/**",
+      "cache/**"
     ],
-    "liquidation": [
-      "healthy positions cannot be health-liquidated before maturity",
-      "unhealthy positions must remain liquidatable",
-      "overdue debt after maturity must be liquidatable",
-      "repay amount, seize amount, LIF, close factor, dust, and bad-debt realization must be mutually consistent",
-      "liquidation must not leave accounting desynced between borrower debt, lender credit, protocol balances, and seized collateral"
+    "counts": {
+      "primary_scope_files": 17,
+      "interface_scope_files": 15,
+      "conditional_scope_items": 3
+    }
+  },
+  "addresses": {
+    "core": {
+      "active_pool": "0x0cCb12C9fB1e1252E60d29aC5c4fDc0640edD72C",
+      "borrower_operations": "0xa49BEC2146fBeeA7314cdbe0Fd222419B0c0602f",
+      "trove_manager": "0xEC035081376ce975Ba9EAF28dFeC7c7A4c483B85",
+      "stability_pool": "0x598913568093AB9F3d549236EB98388271073F18",
+      "default_pool": "0x654Ed83ab231550001Fc1d2281B78fcD84121088",
+      "coll_surplus_pool": "0xBE40060aEf1A2aCb4425823c82978F976fD93cd0",
+      "gas_pool": "0xE9bc9aDBdf67343b5A66D73Cf2E521bb3f088D01",
+      "usds_token": "0x0c6Ed1E73BA73B8441868538E210ebD5DD240FA0",
+      "price_feed": "0xA5220fd82C098b7f1C711e2F1C1d599ccfbCDCB3",
+      "oracle_rate_calculation": "0x76Dcd40843C1dE96839bf83790257A36011E6632",
+      "system_state": "0x698ad77E62679c8E6aCfAfea03547C38fC5Ec0aD",
+      "sorted_troves": "0x97C131C309A04BFa1AAE82856d64b696b89dC87C",
+      "trove_helper": "0xd1BF4d208028CBFe65c6b4D68C12e68F5F3D80F8"
+    },
+    "staking_and_rewards": {
+      "sable_staking_v2": "0xFbc81aEB7e5c11d4A60a0690Db9F36F93E25B16C",
+      "sable_token": "0x1eE098cBaF1f846d5Df1993f7e2d10AFb35A878d",
+      "sable_lp_token": "0xa0D4e270D9EB4E41f7aB02337c21692D7eECCCB0",
+      "community_issuance": "0x7fd517b06b898F1a6081E0891265516F83Dc9C9E",
+      "sable_rewarder": "0x23d253F1Ab38a1Ec8c05103232B4eFaFB6A1bdEb"
+    },
+    "authority": {
+      "system_state_timelock": "0x638675b7C2e056917567571307C6f6A7D69A258A"
+    },
+    "oracles": {
+      "chainlink_bnb_usd_aggregator": "0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE",
+      "pyth_wrapper": "0x4D7E825f80bDf85e913E0DD2A2D54927e9dE1594",
+      "pyth_bnb_feed_id": "0x2f95862b045670cd22bee3114c39763a4a08beeb663b145d283c31d7d1101c4f"
+    },
+    "external_assets": {
+      "wbnb": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+    },
+    "counts": {
+      "recovered_protocol_addresses": 19,
+      "oracle_addresses": 2,
+      "authority_addresses": 1
+    }
+  },
+  "authority": {
+    "owner_values": {
+      "active_pool": "0x0000000000000000000000000000000000000000",
+      "borrower_operations": "0x0000000000000000000000000000000000000000",
+      "trove_manager": "0x0000000000000000000000000000000000000000",
+      "stability_pool": "0x0000000000000000000000000000000000000000",
+      "default_pool": "0x0000000000000000000000000000000000000000"
+    },
+    "decoded_mutable_authority": {
+      "system_state_timelock": "0x638675b7C2e056917567571307C6f6A7D69A258A",
+      "impact": "Can update SystemState parameters through timelock-gated setters."
+    },
+    "trust_boundary": "Core setup ownership is renounced for checked core contracts. SystemState timelock remains the primary mutable-parameter authority."
+  },
+  "tokens": {
+    "protocol_used": {
+      "native_bnb": {
+        "type": "native",
+        "symbol": "BNB",
+        "decimals": 18,
+        "role": [
+          "collateral",
+          "liquidation gain",
+          "redemption payout",
+          "staking fee/gain asset",
+          "oracle update fee balance"
+        ]
+      },
+      "usds": {
+        "address": "0x0c6Ed1E73BA73B8441868538E210ebD5DD240FA0",
+        "name": "USDS Stablecoin",
+        "symbol": "USDS",
+        "decimals": 18,
+        "total_supply": "92032333642572499463529",
+        "role": [
+          "debt token",
+          "stability pool deposit token",
+          "gas compensation token",
+          "staking fee token"
+        ],
+        "risk_traits": [
+          "ERC20 allowance overwrite behavior",
+          "permit support",
+          "core-restricted mint/burn/pool movement",
+          "direct transfers blocked to some core contracts"
+        ]
+      },
+      "sable": {
+        "address": "0x1eE098cBaF1f846d5Df1993f7e2d10AFb35A878d",
+        "name": "SABLE",
+        "symbol": "SABLE",
+        "decimals": 18,
+        "total_supply": "100000000000000000000000000",
+        "role": [
+          "reward token",
+          "LP pair asset",
+          "staking reward accounting asset"
+        ],
+        "risk_traits": [
+          "ERC20 allowance overwrite behavior",
+          "permit support"
+        ]
+      },
+      "sable_lp": {
+        "address": "0xa0D4e270D9EB4E41f7aB02337c21692D7eECCCB0",
+        "name": "Pancake LPs",
+        "symbol": "Cake-LP",
+        "decimals": 18,
+        "total_supply": "23216479908809073414647",
+        "role": [
+          "staking principal token"
+        ],
+        "pair": {
+          "token0": "0x1eE098cBaF1f846d5Df1993f7e2d10AFb35A878d",
+          "token1": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+          "reserve0": "12176323796385788711697862",
+          "reserve1": "48826407685591615235",
+          "reserve_timestamp": 1780670741
+        }
+      }
+    },
+    "unknown_token_enumeration": {
+      "status": "not_complete",
+      "reason": "Raw RPC can query known token balances but cannot discover unknown BEP20 contracts held by an address.",
+      "required_next_step": "Use BscScan/Covalent/Bitquery/GoldRush or equivalent token-holdings index for every recovered protocol address, then separate spam/airdrops from protocol-used tokens."
+    },
+    "counts": {
+      "protocol_used_tokens_including_native": 4,
+      "erc20_or_lp_tokens_checked": 3
+    }
+  },
+  "balances": {
+    "native_bnb_wei": {
+      "ActivePool": "874414848004364383519",
+      "BorrowerOperations": "0",
+      "TroveManager": "0",
+      "StabilityPool": "87196",
+      "DefaultPool": "0",
+      "USDSToken": "0",
+      "PriceFeed": "9999999999999467",
+      "OracleRateCalculation": "0",
+      "SystemState": "0",
+      "SortedTroves": "0",
+      "SableStakingV2": "301290650075643435",
+      "GasPool": "0",
+      "CollSurplusPool": "0",
+      "TimeLock": "0",
+      "SABLEToken": "0",
+      "TroveHelper": "0",
+      "CommunityIssuance": "0",
+      "SableLPToken": "0",
+      "SableRewarder": "0"
+    },
+    "nonzero_token_balances": [
+      {
+        "token": "USDS",
+        "holder": "StabilityPool",
+        "holder_address": "0x598913568093AB9F3d549236EB98388271073F18",
+        "balance": "6579363784326119862850"
+      },
+      {
+        "token": "USDS",
+        "holder": "SableStakingV2",
+        "holder_address": "0xFbc81aEB7e5c11d4A60a0690Db9F36F93E25B16C",
+        "balance": "654574197951713185"
+      },
+      {
+        "token": "USDS",
+        "holder": "GasPool",
+        "holder_address": "0xE9bc9aDBdf67343b5A66D73Cf2E521bb3f088D01",
+        "balance": "10000000000000000000"
+      },
+      {
+        "token": "SABLE",
+        "holder": "CommunityIssuance",
+        "holder_address": "0x7fd517b06b898F1a6081E0891265516F83Dc9C9E",
+        "balance": "5409915403529186761416"
+      },
+      {
+        "token": "SABLE",
+        "holder": "SableLPToken",
+        "holder_address": "0xa0D4e270D9EB4E41f7aB02337c21692D7eECCCB0",
+        "balance": "12176323796385788711697862"
+      },
+      {
+        "token": "SABLE_LP",
+        "holder": "SableStakingV2",
+        "holder_address": "0xFbc81aEB7e5c11d4A60a0690Db9F36F93E25B16C",
+        "balance": "20935597236192701456120"
+      }
     ],
-    "maturity": [
-      "pre-maturity and post-maturity paths must not be composable to bypass debt repayment",
-      "maturity boundary must not allow debt increase by rounding, timestamp equality, or callback sequencing",
-      "post-maturity unwinding must not mint free credit or erase debt incorrectly"
+    "zero_balance_coverage": {
+      "checked_tokens": [
+        "USDS",
+        "SABLE",
+        "SABLE_LP"
+      ],
+      "checked_protocol_addresses": 19,
+      "statement": "Every checked token/address pair omitted from nonzero_token_balances was zero at the refresh block."
+    },
+    "largest_custody": [
+      {
+        "asset": "BNB",
+        "holder": "ActivePool",
+        "balance": "874414848004364383519"
+      },
+      {
+        "asset": "USDS",
+        "holder": "StabilityPool",
+        "balance": "6579363784326119862850"
+      },
+      {
+        "asset": "SABLE_LP",
+        "holder": "SableStakingV2",
+        "balance": "20935597236192701456120"
+      },
+      {
+        "asset": "SABLE",
+        "holder": "CommunityIssuance",
+        "balance": "5409915403529186761416"
+      }
     ],
-    "auth_and_gates": [
-      "authorization must only allow intended account delegation",
-      "gate checks must apply to all entry paths",
-      "exit paths must remain available even when enter gate reverts",
-      "liquidator gate must not be bypassed through alternate liquidation or callback paths"
+    "counts": {
+      "native_balance_rows": 19,
+      "erc20_balance_cells_checked": 57,
+      "nonzero_erc20_balance_rows": 6
+    }
+  },
+  "live_values": {
+    "active_pool": {
+      "raw_bnb_balance": "874414848004364383519",
+      "recorded_bnb": "874414848004364383519",
+      "recorded_usds_debt": "92032333642572499463529",
+      "borrower_operations": "0xa49BEC2146fBeeA7314cdbe0Fd222419B0c0602f",
+      "trove_manager": "0xEC035081376ce975Ba9EAF28dFeC7c7A4c483B85",
+      "stability_pool": "0x598913568093AB9F3d549236EB98388271073F18",
+      "default_pool": "0x654Ed83ab231550001Fc1d2281B78fcD84121088"
+    },
+    "default_pool": {
+      "recorded_bnb": "0",
+      "recorded_usds_debt": "0"
+    },
+    "stability_pool": {
+      "recorded_bnb": "87196",
+      "total_usds_deposits": "6579363784326119862850",
+      "usds_balance": "6579363784326119862850",
+      "P": "772918228237040811",
+      "current_scale": "0",
+      "current_epoch": "0",
+      "last_sable_error": "1432410479054684555332"
+    },
+    "system_state": {
+      "usds_gas_compensation": "10000000000000000000",
+      "min_net_debt": "90000000000000000000",
+      "mcr": "1100000000000000000",
+      "ccr": "1500000000000000000",
+      "borrowing_fee_floor": "500000000000000",
+      "redemption_fee_floor": "500000000000000",
+      "timelock": "0x638675b7C2e056917567571307C6f6A7D69A258A"
+    },
+    "price_feed": {
+      "last_good_price": "698869481810000000000",
+      "status": "0",
+      "status_label": "pythWorking",
+      "age_seconds": "120",
+      "chainlink_aggregator": "0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE",
+      "pyth_wrapper": "0x4D7E825f80bDf85e913E0DD2A2D54927e9dE1594",
+      "pyth_bnb_feed_id": "0x2f95862b045670cd22bee3114c39763a4a08beeb663b145d283c31d7d1101c4f"
+    },
+    "troves": {
+      "trove_owners_count": "1",
+      "sorted_troves_size": "1",
+      "single_live_trove": {
+        "owner": "0x64638Adb1e882678ec8f6F6AacAe648828cc7893",
+        "debt": "92032333642572499463529",
+        "collateral_bnb": "874414848004364383519",
+        "stake": "874414848004364383519",
+        "pending_bnb_reward": "0",
+        "pending_usds_debt_reward": "0",
+        "icr_at_last_good_price": "6640077758813836515",
+        "status_note": "Address returned from TroveOwners[0] and has nonzero debt/collateral/stake; direct getTroveStatus RPC call timed out on the endpoint."
+      }
+    },
+    "sable_staking": {
+      "initialized": true,
+      "sable_token": "0x1eE098cBaF1f846d5Df1993f7e2d10AFb35A878d",
+      "sable_lp_token": "0xa0D4e270D9EB4E41f7aB02337c21692D7eECCCB0",
+      "sable_rewarder": "0x23d253F1Ab38a1Ec8c05103232B4eFaFB6A1bdEb",
+      "total_sable_lp_staked": "20935597236192701456120",
+      "lp_balance": "20935597236192701456120",
+      "bnb_balance": "301290650075643435",
+      "usds_balance": "654574197951713185",
+      "F_BNB": "83664420796176",
+      "F_USDS": "1469844740846061710270",
+      "F_SABLE": "0"
+    },
+    "community_issuance": {
+      "sable_balance": "5409915403529186761416",
+      "total_sable_issued": "827119683802499810000000",
+      "last_issuance_time": "1727614847",
+      "latest_reward_per_sec": "5000000000000000"
+    }
+  },
+  "state_model": {
+    "system_summary": [
+      "Borrowers deposit native BNB collateral through BorrowerOperations into ActivePool.",
+      "BorrowerOperations updates TroveManager trove structs and mints USDS debt.",
+      "TroveManager manages liquidations, redemptions, rewards, and active trove ordering through SortedTroves.",
+      "StabilityPool receives USDS deposits, offsets liquidated debt, burns USDS, receives BNB from ActivePool, and pays BNB/SABLE gains.",
+      "DefaultPool temporarily holds redistributed liquidation debt/collateral until pending rewards are applied.",
+      "CollSurplusPool holds surplus BNB claimable by borrowers.",
+      "SystemState supplies live solvency constants and is controlled by TimeLock.",
+      "PriceFeed supplies BNB/USD via Pyth primary and Chainlink fallback.",
+      "SableStakingV2 accepts SABLE_LP and distributes BNB/USDS/SABLE fee gains."
     ],
-    "external_calls": [
-      "callbacks must not corrupt partial state through reentrancy",
-      "ERC20 transfer deltas must match accounting deltas",
-      "fee-on-transfer, rebasing, false-return, ERC777-like hooks, and non-standard decimals should be tested if not explicitly excluded",
-      "multicall must not bypass per-action invariants"
+    "structs": {
+      "BorrowerOperations": [
+        "LocalVariables_openTrove",
+        "LocalVariables_adjustTrove",
+        "AdjustTroveParam",
+        "ContractsCache",
+        "MoveTokensAndBNBFromAdjustmentParam"
+      ],
+      "TroveManager": [
+        "Trove",
+        "RewardSnapshot",
+        "LiquidationValues",
+        "LiquidationTotals",
+        "RedemptionTotals",
+        "SingleRedemptionValues",
+        "ContractsCache"
+      ],
+      "StabilityPool": [
+        "Deposit",
+        "Snapshots",
+        "FrontEnd"
+      ],
+      "PriceFeed": [
+        "PythResponse",
+        "ChainlinkResponse",
+        "Status"
+      ],
+      "SableStakingV2": [
+        "Snapshot"
+      ]
+    },
+    "private_storage_decoded": [
+      {
+        "contract": "BorrowerOperations",
+        "slot": 8,
+        "name": "gasPoolAddress",
+        "value": "0xE9bc9aDBdf67343b5A66D73Cf2E521bb3f088D01"
+      },
+      {
+        "contract": "BorrowerOperations",
+        "slot": 9,
+        "name": "collSurplusPool",
+        "value": "0xBE40060aEf1A2aCb4425823c82978F976fD93cd0"
+      },
+      {
+        "contract": "SystemState",
+        "slot": 7,
+        "name": "timeLock",
+        "value": "0x638675b7C2e056917567571307C6f6A7D69A258A"
+      }
     ]
   },
-  "high_value_attack_flows": [
-    {
-      "name": "deposit_take_withdraw_same_tx",
-      "sequence": [
-        "deposit collateral",
-        "take offer to borrow",
-        "callback or multicall tries to withdraw collateral",
-        "assert health and balance conservation"
+  "behavior": {
+    "value_flow": {
+      "bnb_ingress": [
+        "BorrowerOperations sends borrower collateral to ActivePool during open/add collateral.",
+        "DefaultPool sends pending redistributed BNB back to ActivePool.",
+        "ActivePool sends liquidation BNB gains to StabilityPool.",
+        "Fee/reward paths can leave BNB in SableStakingV2."
+      ],
+      "bnb_egress": [
+        "ActivePool sends collateral to borrowers on withdrawal/close.",
+        "ActivePool sends liquidation gas compensation to callers.",
+        "ActivePool sends liquidation offset collateral to StabilityPool.",
+        "ActivePool sends redemption/surplus BNB to redeemers or CollSurplusPool.",
+        "StabilityPool sends BNB gains to depositors or into troves.",
+        "SableStakingV2 sends BNB gains to stakers."
+      ],
+      "usds_flow": [
+        "BorrowerOperations mints USDS to borrowers and GasPool.",
+        "BorrowerOperations burns USDS on repay/close.",
+        "StabilityPool pulls USDS from depositors through USDSToken.sendToPool.",
+        "StabilityPool burns USDS during liquidation offset.",
+        "StabilityPool returns USDS to depositors on withdrawal.",
+        "TroveManager burns USDS during redemption."
+      ],
+      "sable_and_lp_flow": [
+        "CommunityIssuance issues SABLE to StabilityPool reward accounting.",
+        "SableStakingV2 tracks staked SABLE_LP and distributes BNB/USDS/SABLE gains.",
+        "SABLE_LP pair holds SABLE and WBNB reserves."
       ]
     },
-    {
-      "name": "partial_fill_over_consumption",
-      "sequence": [
-        "create/sign offer with max amount",
-        "fill partially",
-        "fill again through same or related offer",
-        "assert consumed amount and group budget cannot exceed cap"
-      ]
-    },
-    {
-      "name": "callback_reentrancy_take",
-      "sequence": [
-        "take offer with maker callback",
-        "callback reenters take/withdraw/repay/liquidate/authorize",
-        "assert no partial state can be reused"
-      ]
-    },
-    {
-      "name": "maturity_boundary_trade",
-      "sequence": [
-        "open position before maturity",
-        "warp to maturity - 1",
-        "take/repay/settle",
-        "warp to maturity",
-        "try debt-increasing trade",
-        "assert debt cannot increase after maturity"
-      ]
-    },
-    {
-      "name": "healthy_to_liquidatable_rounding",
-      "sequence": [
-        "create near-threshold multi-collateral position",
-        "fuzz decimals/prices/LLTV/rounding",
+    "trigger_surface": {
+      "borrower_user_paths": [
+        "openTrove",
+        "addColl",
+        "withdrawColl",
+        "withdrawUSDS",
+        "repayUSDS",
+        "adjustTrove",
+        "closeTrove",
+        "claimCollateral"
+      ],
+      "stability_pool_user_paths": [
+        "provideToSP",
+        "withdrawFromSP",
+        "withdrawBNBGainToTrove",
+        "registerFrontEnd"
+      ],
+      "public_liquidation_redemption_paths": [
         "liquidate",
-        "assert healthy position cannot be liquidated"
-      ]
+        "liquidateTroves",
+        "batchLiquidateTroves",
+        "redeemCollateral"
+      ],
+      "token_paths": [
+        "USDSToken.transfer",
+        "USDSToken.approve",
+        "USDSToken.transferFrom",
+        "USDSToken.increaseAllowance",
+        "USDSToken.decreaseAllowance",
+        "USDSToken.permit",
+        "SABLEToken.transfer",
+        "SABLEToken.approve",
+        "SABLEToken.transferFrom",
+        "SABLEToken.permit"
+      ],
+      "restricted_core_paths": [
+        "ActivePool.sendBNB",
+        "ActivePool.increaseUSDSDebt",
+        "ActivePool.decreaseUSDSDebt",
+        "DefaultPool.sendBNBToActivePool",
+        "StabilityPool.offset",
+        "USDSToken.mint",
+        "USDSToken.burn",
+        "USDSToken.sendToPool",
+        "USDSToken.returnFromPool"
+      ],
+      "trusted_or_conditional_paths": [
+        "SystemState timelock setters",
+        "setup-only owner functions with renounced ownership",
+        "SableRewarder external verified-source behavior"
+      ],
+      "count_public_external_receive_surfaces_in_scoped_files": 142
+    }
+  },
+  "invariants": [
+    {
+      "name": "ActivePool raw BNB equals recorded BNB",
+      "status": "pass",
+      "live_values": {
+        "raw_bnb": "874414848004364383519",
+        "recorded_bnb": "874414848004364383519"
+      }
     },
     {
-      "name": "bad_debt_double_realization",
-      "sequence": [
-        "create undercollateralized debt",
-        "liquidate partially",
-        "liquidate again or settle",
-        "assert lender credit loss is not double-counted or skipped"
-      ]
+      "name": "DefaultPool is empty",
+      "status": "pass",
+      "live_values": {
+        "recorded_bnb": "0",
+        "recorded_usds_debt": "0"
+      }
     },
     {
-      "name": "gate_bypass_entry",
-      "sequence": [
-        "create gated market",
-        "attempt direct entry and indirect entry via callback/multicall/authorization",
-        "assert every credit/debt increase hits enter gate"
-      ]
+      "name": "USDS total supply equals ActivePool debt plus DefaultPool debt",
+      "status": "pass",
+      "live_values": {
+        "usds_total_supply": "92032333642572499463529",
+        "active_pool_debt": "92032333642572499463529",
+        "default_pool_debt": "0"
+      }
     },
     {
-      "name": "liquidator_gate_bypass",
-      "sequence": [
-        "create market with liquidator gate",
-        "attempt liquidation through alternate actor/callback/authorized address",
-        "assert only approved liquidator can liquidate"
-      ]
+      "name": "SortedTroves size equals TroveManager owner count",
+      "status": "pass",
+      "live_values": {
+        "sorted_troves_size": "1",
+        "trove_owners_count": "1"
+      }
     },
     {
-      "name": "coarse_authorization_abuse",
-      "sequence": [
-        "user authorizes operator",
-        "operator performs unexpected market/action/authorization mutation",
-        "assert behavior matches documented full-control model and cannot be confused by integrations"
-      ]
+      "name": "StabilityPool USDS balance equals total deposits",
+      "status": "pass",
+      "live_values": {
+        "usds_balance": "6579363784326119862850",
+        "total_usds_deposits": "6579363784326119862850"
+      }
     },
     {
-      "name": "fee_crystallization_edge",
-      "sequence": [
-        "increase credit",
-        "change/override fee if allowed",
-        "reduce credit later",
-        "assert old credit fee terms are crystallized and not retroactively changed"
-      ]
+      "name": "GasPool USDS equals one current gas compensation unit",
+      "status": "pass",
+      "live_values": {
+        "gas_pool_usds": "10000000000000000000",
+        "system_state_usds_gas_compensation": "10000000000000000000"
+      }
+    },
+    {
+      "name": "SableStakingV2 LP custody equals totalSableLPStaked",
+      "status": "pass",
+      "live_values": {
+        "lp_balance": "20935597236192701456120",
+        "total_sable_lp_staked": "20935597236192701456120"
+      }
+    },
+    {
+      "name": "Core owners are renounced for checked core contracts",
+      "status": "pass",
+      "live_values": {
+        "owner": "0x0000000000000000000000000000000000000000"
+      }
     }
   ],
-  "audit_priority": {
-    "highest_priority_files_or_modules": [
-      "src/Midnight.sol",
-      "src/libraries/* accounting/math libraries",
-      "src/ratifiers/*",
-      "src/periphery/* callback or helper contracts",
-      "src/interfaces/* for exact external-call expectations"
+  "weird_values_and_leads": [
+    {
+      "lead": "Only one live trove exists.",
+      "why_it_matters": "Liquidation, redemption, recovery-mode, and last-trove rules are high-value live boundaries."
+    },
+    {
+      "lead": "StabilityPool has nonzero USDS deposits but only 87196 wei recorded BNB.",
+      "why_it_matters": "Dust/zero-gain branches should be tested in depositor withdrawal and BNB-gain-to-trove paths."
+    },
+    {
+      "lead": "SableStakingV2 has meaningful BNB, USDS, and LP custody.",
+      "why_it_matters": "Staking reward accounting and withdrawal paths are live fund surfaces, not peripheral code."
+    },
+    {
+      "lead": "PriceFeed is in pythWorking mode but user-facing calls require price update calldata.",
+      "why_it_matters": "Oracle update, fallback, staleness, and fee paths remain runtime-dependent."
+    },
+    {
+      "lead": "USDS and SABLE preserve direct allowance overwrite behavior.",
+      "why_it_matters": "Known user-level allowance race already recorded for USDS; SABLE has analogous token behavior."
+    }
+  ],
+  "known_gaps": [
+    {
+      "gap": "Unknown/spam BEP20 token holdings are not enumerated.",
+      "reason": "Raw RPC cannot discover unknown token contracts held by an address.",
+      "next_step": "Use BscScan/Covalent/Bitquery/GoldRush token holdings API across all recovered protocol addresses."
+    },
+    {
+      "gap": "StabilityPool depositor/front-end event enumeration is not complete.",
+      "next_step": "Use protocol events to enumerate depositors/front ends and sample pending gains."
+    },
+    {
+      "gap": "SableRewarder verified source/ABI behavior is not deeply classified.",
+      "next_step": "Fetch/verify rewarder source and read reward-token/config state."
+    },
+    {
+      "gap": "TimeLock queue/admin behavior is not deeply classified.",
+      "next_step": "Read TimeLock ABI/source and queued transaction state."
+    }
+  ],
+  "sources": {
+    "local_files": [
+      "README.md",
+      "source-artifacts/deployment-context.json",
+      "source-artifacts/live_state_snapshot.json",
+      "source-artifacts/source_tree_map.json",
+      "source-artifacts/*_runtime_code.txt",
+      "source-artifacts/*_bscscan.html",
+      "src/**/*.sol",
+      "aarc-audit/01-usds-approve-race-allows-user-balance-drain.md"
     ],
-    "highest_priority_questions": [
-      "Can credit/debt/collateral accounting desync from actual ERC20 balances?",
-      "Can callback or multicall observe and reuse partial state?",
-      "Can an offer or consumption group be overfilled across multiple markets?",
-      "Can maturity boundary allow debt increase or invalid settlement?",
-      "Can liquidation seize too much, too little, or realize bad debt incorrectly?",
-      "Can gates or ratifiers be bypassed through alternate entry paths?",
-      "Can rounding near LLTV/LIF/dust/tick/fee boundaries create extractable value?",
-      "Can non-standard token behavior break accounting assumptions?"
+    "commands_summary": [
+      "cast block-number",
+      "cast balance across recovered protocol addresses",
+      "cast call for public getters and token metadata/balances",
+      "cast storage for private dependency addresses",
+      "forge inspect ... storage-layout for core contracts"
+    ],
+    "notes": [
+      "Previous live_context.json contained Morpho Midnight context and was replaced.",
+      "cast network access required escalation because sandbox DNS blocked RPC by default.",
+      "Markdown artifacts mirror this canonical JSON for human review."
     ]
   },
-  "recommended_fuzz_axes": {
-    "amounts": [
-      "0",
-      "1 wei",
-      "dust - 1",
-      "dust",
-      "dust + 1",
-      "max uint bounds where safe",
-      "near offer remaining amount",
-      "near debt amount",
-      "near collateral threshold"
+  "future_run_requirements": {
+    "canonical_output": "live_context.json",
+    "supporting_outputs": [
+      "aarc-audit/live-context/*.md",
+      "aarc-audit/live-context/scope.json"
     ],
-    "time": [
-      "maturity - 1",
-      "maturity",
-      "maturity + 1",
-      "maturity + 15 minutes",
-      "fee breakpoint days: 0, 1, 7, 30, 90, 180, 360"
-    ],
-    "prices_and_risk": [
-      "near health threshold",
-      "LLTV finite allowed values",
-      "gamma 0.25",
-      "gamma 0.5",
-      "LIFmax boundary",
-      "multi-collateral mixed decimals",
-      "oracle price rounding boundaries"
-    ],
-    "offer_state": [
-      "first fill",
-      "partial fill",
-      "exact full fill",
-      "overfill by 1",
-      "shared consumption group exhausted",
-      "cancel then fill",
-      "deadline boundary",
-      "same signature different market",
-      "same signature different taker"
-    ],
-    "external_behavior": [
-      "callback reverts",
-      "callback reenters",
-      "token returns false",
-      "token charges fee",
-      "token rebases",
-      "token has 6/8/18/27 decimals",
-      "receiver is contract",
-      "payer is different from msg.sender"
-    ]
-  },
-  "reporting_bias": {
-    "valid_finding_requires": [
-      "exact reachable code path",
-      "attacker-controlled input or timing",
-      "broken invariant",
-      "existing checks shown insufficient",
-      "concrete scoped impact",
-      "Foundry PoC or stateful fuzz reproduction"
-    ],
-    "likely_invalid_if": [
-      "requires admin misuse only",
-      "requires oracle compromise only",
-      "requires malicious token owner only",
-      "only causes failed transaction for attacker",
-      "only affects offchain routing quality",
-      "only proves integration misuse without protocol-level bug",
-      "matches documented coarse authorization behavior without additional confusion bug"
-    ]
+    "rule": "Future live recon must write the complete combined context into live_context.json first, then mirror and explain it in Markdown files."
   }
 }
